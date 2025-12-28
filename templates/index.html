@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thermal Vision Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Raspberry Pi 5 Monitor</p>
+          <h1>Thermal Vision</h1>
+        </div>
+        <div class="status">
+          <span id="status-text">接続中...</span>
+          <span id="sensor-badge" class="badge">Live</span>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <div class="card__header">
+            <h2>カメラ</h2>
+            <p>ライブ映像ストリーム</p>
+          </div>
+          <div class="media">
+            <img
+              id="camera-stream"
+              src="/stream"
+              alt="USB camera stream"
+            />
+            <div class="media__overlay">Live</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card__header">
+            <h2>温度ヒートマップ</h2>
+          </div>
+          <div class="heatmap">
+            <canvas id="heatmap" width="32" height="24"></canvas>
+            <div class="metrics">
+              <div>
+                <span class="label">MAX</span>
+                <strong id="temp-max">--</strong>
+                <span class="unit">°C</span>
+              </div>
+              <div>
+                <span class="label">MIN</span>
+                <strong id="temp-min">--</strong>
+                <span class="unit">°C</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!--
+      <footer class="footer">
+        <span>Target FPS: 60</span>
+        <span>Dark Blue UI</span>
+      </footer>
+      !-->
+    </div>
+
+    <script src="/static/js/app.js" defer></script>
+  </body>
+</html>

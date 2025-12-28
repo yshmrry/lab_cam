@@ -11,10 +11,12 @@
 - 有効化: `source .venv/bin/activate`
 - 依存関係インストール: `pip install -r requirements.txt`
 - ローカル起動: `python src/app.py`（`debug=True`で起動）
+- 本番起動: `gunicorn src.app:app`（環境に応じてワーカー数等を設定）
 - Flask CLIを使う場合: `FLASK_APP=src/app.py` を設定して `flask run`
 
 ## コーディングスタイルと命名規則
 - Python: PEP 8に準拠、4スペースインデント、短く明確な関数名。
+- Python関数の冒頭には短いコメントを付けて意図を明示します。
 - HTML/CSS: クラス名はkebab-case（例: `.hero-panel`）、ファイル名は役割に合わせる（`style.css`, `app.js`）。
 - テンプレート変数: Jinja2では説明的なsnake_case（例: `{{ focus_window }}`）。
 - 大きな1枚テンプレートより、小さく目的別のテンプレートを優先。
@@ -31,3 +33,4 @@
 ## 設定とアセット管理
 - 秘密情報はリポジトリに入れず、環境変数で管理します。
 - ビルド済みフロントエンド成果物は `static/` に置き、ソースは分離（例: `assets/`）して混在を避けます。
+- 新しい依存関係を追加する場合は `requirements.txt` にバージョンまで明記します（例: `Flask==3.0.2`）。
