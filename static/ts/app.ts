@@ -11,13 +11,19 @@ const statusText = document.getElementById("status-text");
 const sensorBadge = document.getElementById("sensor-badge");
 const tempMax = document.getElementById("temp-max");
 const tempMin = document.getElementById("temp-min");
+const cameraStream = document.getElementById("camera-stream") as HTMLImageElement | null;
 
 const context = heatmap?.getContext("2d");
 const offscreen = document.createElement("canvas");
 const offscreenContext = offscreen.getContext("2d");
-const targetFps = 60;
-const frameInterval = 1000 / targetFps;
-let lastFrame = 0;
+const targetFps = 6;
+const baseInterval = 1000 / targetFps;
+const maxBackoff = 5000;
+const hiddenInterval = 2000;
+let thermalDelay = baseInterval;
+let thermalTimer = 0;
+let thermalInFlight = false;
+let streamRetryDelay = 500;
 
 function updateStatus(message: string): void {
   // Update the header status text.
@@ -102,19 +108,73 @@ async function fetchThermal(): Promise<void> {
     if (tempMax) tempMax.textContent = data.max.toFixed(1);
     if (tempMin) tempMin.textContent = data.min.toFixed(1);
     updateStatus("監視中");
+    thermalDelay = baseInterval;
   } catch (error) {
     updateStatus("センサー通信失敗");
+    thermalDelay = Math.min(thermalDelay * 1.5, maxBackoff);
   }
 }
 
-function loop(timestamp: number): void {
-  // Control the render loop to meet the target fps.
-  if (timestamp - lastFrame >= frameInterval) {
-    lastFrame = timestamp;
-    fetchThermal();
-  }
-  requestAnimationFrame(loop);
+function scheduleThermal(delay: number): void {
+  // Schedule the next thermal poll with backoff.
+  window.clearTimeout(thermalTimer);
+  thermalTimer = window.setTimeout(tickThermal, delay);
 }
 
 updateStatus("接続中...");
-requestAnimationFrame(loop);
+
+async function tickThermal(): Promise<void> {
+  // Perform one thermal poll cycle respecting backoff.
+  if (document.hidden) {
+    scheduleThermal(hiddenInterval);
+    return;
+  }
+  if (thermalInFlight) {
+    scheduleThermal(baseInterval);
+    return;
+  }
+  thermalInFlight = true;
+  try {
+    await fetchThermal();
+  } finally {
+    thermalInFlight = false;
+    scheduleThermal(thermalDelay);
+  }
+}
+
+function startStream(): void {
+  // Force-refresh the MJPEG stream URL.
+  if (!cameraStream) return;
+  const cacheBust = Date.now();
+  cameraStream.src = `/stream?t=${cacheBust}`;
+}
+
+function scheduleStreamRetry(): void {
+  // Reconnect the stream with exponential backoff.
+  window.setTimeout(() => {
+    streamRetryDelay = Math.min(streamRetryDelay * 1.5, maxBackoff);
+    startStream();
+  }, streamRetryDelay);
+}
+
+if (cameraStream) {
+  cameraStream.addEventListener("error", () => {
+    updateStatus("カメラ再接続中...");
+    scheduleStreamRetry();
+  });
+  cameraStream.addEventListener("load", () => {
+    streamRetryDelay = 500;
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (cameraStream) cameraStream.src = "";
+  } else {
+    startStream();
+    scheduleThermal(baseInterval);
+  }
+});
+
+startStream();
+scheduleThermal(baseInterval);
